@@ -1,18 +1,29 @@
 <template>
-  <div class="dashboard">
-    <div class="status-panel card">
-      <h3>
-        Auto-Tracking (30s):
-        <span :class="isTracking ? 'on' : 'off'">{{ isTracking ? 'ACTIVE' : 'INACTIVE' }}</span>
-      </h3>
-      <button @click="toggleAutoTracking" class="btn" :class="isTracking ? 'danger' : 'success'">
-        {{ isTracking ? 'Stop Auto-Tracking' : 'Start Auto-Tracking' }}
+  <div class="dashboard-grid">
+    <div class="card status-card">
+      <div class="card-header">
+        <h4>Background Tracking</h4>
+        <div class="indicator" :class="isTracking ? 'indicator-on' : 'indicator-off'"></div>
+      </div>
+      <p class="status-msg">
+        {{
+          isTracking
+            ? 'The system is monitoring your position every 30 seconds.'
+            : 'Tracking is currently suspended.'
+        }}
+      </p>
+      <button
+        @click="toggleAutoTracking"
+        class="btn"
+        :class="isTracking ? 'btn-danger' : 'btn-success'"
+      >
+        {{ isTracking ? 'Stop Service' : 'Start Service' }}
       </button>
-      <p v-if="isTracking" class="hint">Sending location to server every 30 seconds...</p>
     </div>
 
-    <div class="test-panel card">
-      <h4>Manual Coordinate Test</h4>
+    <div class="card test-card">
+      <h4>Manual Position Override</h4>
+      <p class="hint">Simulate your location to test detection logic.</p>
       <div class="input-row">
         <input
           v-model.number="manualCoords.latitude"
@@ -27,14 +38,19 @@
           placeholder="Longitude"
         />
       </div>
-      <button @click="triggerManualUpdate" class="btn secondary">Check This Location</button>
+      <button @click="triggerManualUpdate" class="btn btn-secondary">Check Location</button>
     </div>
 
-    <div v-if="serverStatus" class="notification-log card">
-      <h4>Server Response</h4>
-      <p :class="serverStatus.includes('Welcome') ? 'welcome-text' : 'status-text'">
-        {{ serverStatus }}
-      </p>
+    <div
+      v-if="serverStatus"
+      class="card alert-card"
+      :class="{ 'welcome-bg': serverStatus.includes('Welcome') }"
+    >
+      <h4>Server Feedback</h4>
+      <div class="alert-content">
+        <span class="alert-icon">{{ serverStatus.includes('Welcome') ? '🎉' : 'ℹ️' }}</span>
+        <p>{{ serverStatus }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -56,16 +72,12 @@ async function sendLocationUpdate(lat, lon) {
       latitude: lat,
       longitude: lon,
     })
-
     serverStatus.value = response.data
-
-    // Trigger notification if backend returns a Welcome message
     if (response.data.startsWith('Welcome')) {
       showBrowserNotification(response.data)
     }
   } catch (error) {
-    console.error('API Error:', error)
-    serverStatus.value = 'Failed to connect to server.'
+    serverStatus.value = 'Connection Error'
   }
 }
 
@@ -79,22 +91,13 @@ function toggleAutoTracking() {
 
 function startTracking() {
   isTracking.value = true
-
-  // Requirement: Continuously tracks location in background
-  // 1. Send immediate update
+  requestNotificationPermission()
   getCurrentLocation()
-
-  // 2. Set interval for every 30 seconds
-  trackingInterval = setInterval(() => {
-    getCurrentLocation()
-  }, 30000)
+  trackingInterval = setInterval(() => getCurrentLocation(), 30000)
 }
 
 function stopTracking() {
-  if (trackingInterval) {
-    clearInterval(trackingInterval)
-    trackingInterval = null
-  }
+  if (trackingInterval) clearInterval(trackingInterval)
   isTracking.value = false
 }
 
@@ -102,8 +105,7 @@ function getCurrentLocation() {
   navigator.geolocation.getCurrentPosition(
     (pos) => sendLocationUpdate(pos.coords.latitude, pos.coords.longitude),
     (err) => {
-      console.error(err)
-      serverStatus.value = 'GPS Error: ' + err.message
+      serverStatus.value = 'GPS Error'
       stopTracking()
     },
     { enableHighAccuracy: true },
@@ -111,45 +113,68 @@ function getCurrentLocation() {
 }
 
 function triggerManualUpdate() {
+  requestNotificationPermission()
   sendLocationUpdate(manualCoords.latitude, manualCoords.longitude)
 }
 
-function showBrowserNotification(message) {
-  if (!('Notification' in window)) return
-
-  if (Notification.permission === 'granted') {
-    new Notification('POI Entry Detected', { body: message, icon: '/favicon.ico' })
-  } else if (Notification.permission !== 'denied') {
-    // Re-request permission if it wasn't explicitly denied
-    Notification.requestPermission().then((permission) => {
-      if (permission === 'granted') {
-        new Notification('POI Entry Detected', { body: message })
-      }
-    })
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission()
   }
 }
 
-// Cleanup interval if component is destroyed
-onUnmounted(() => {
-  stopTracking()
-})
+function showBrowserNotification(message) {
+  if (Notification.permission === 'granted') {
+    new Notification('POI Detected', { body: message })
+  }
+}
+
+onUnmounted(() => stopTracking())
 </script>
 
 <style scoped>
+.dashboard-grid {
+  display: grid;
+  gap: 20px;
+}
 .card {
   background: white;
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.card h4 {
+  margin: 0;
+  color: #333;
+}
+.indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.indicator-on {
+  background: #28a745;
+  box-shadow: 0 0 8px #28a745;
+}
+.indicator-off {
+  background: #dc3545;
+}
+.status-msg {
+  color: #666;
+  font-size: 0.9rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
-.on {
-  color: #28a745;
-  font-weight: bold;
-}
-.off {
-  color: #dc3545;
-  font-weight: bold;
+.hint {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
 }
 .input-row {
   display: flex;
@@ -158,44 +183,44 @@ onUnmounted(() => {
 }
 .input-row input {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.6rem;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 .btn {
-  padding: 0.75rem;
   border: none;
-  border-radius: 4px;
+  padding: 0.8rem;
+  border-radius: 6px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: bold;
   width: 100%;
-  transition: 0.3s;
 }
-.success {
+.btn-success {
   background: #28a745;
   color: white;
 }
-.danger {
+.btn-danger {
   background: #dc3545;
   color: white;
 }
-.secondary {
+.btn-secondary {
   background: #6c757d;
   color: white;
 }
-.welcome-text {
-  font-weight: bold;
-  color: #007bff;
-  border-left: 4px solid #007bff;
-  padding-left: 10px;
+.alert-card {
+  border-left: 5px solid #007bff;
 }
-.status-text {
-  color: #555;
-  font-style: italic;
+.welcome-bg {
+  background: #e7f3ff;
+  border-left-color: #28a745;
 }
-.hint {
-  font-size: 0.8rem;
-  color: #777;
-  margin-top: 5px;
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 0.5rem;
+}
+.alert-icon {
+  font-size: 1.5rem;
 }
 </style>
