@@ -31,6 +31,7 @@ async function confirmConsent() {
     emit('consent-updated', response.data)
   } catch (error) {
     alert('Failed to save consent.')
+    console.log(error)
   }
 }
 </script>

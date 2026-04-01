@@ -78,6 +78,7 @@ async function sendLocationUpdate(lat, lon) {
     }
   } catch (error) {
     serverStatus.value = 'Connection Error'
+    console.log(error)
   }
 }
 
@@ -107,6 +108,7 @@ function getCurrentLocation() {
     (err) => {
       serverStatus.value = 'GPS Error'
       stopTracking()
+      console.log(err)
     },
     { enableHighAccuracy: true },
   )
