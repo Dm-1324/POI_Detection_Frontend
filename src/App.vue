@@ -70,9 +70,24 @@ body {
   font-size: 1.5rem;
 }
 .main-content {
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  max-width: 500px;
+  width: 95%;
+  margin: 1.5rem auto;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0.8rem 1rem;
+  }
+  .brand h1 {
+    font-size: 1.1rem;
+  }
+  .btn-logout {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
 }
 .btn-logout {
   background: none;
