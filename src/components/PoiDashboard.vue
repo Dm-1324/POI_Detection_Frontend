@@ -44,11 +44,16 @@
     <div
       v-if="serverStatus"
       class="card alert-card"
-      :class="{ 'welcome-bg': serverStatus.includes('Welcome') }"
+      :class="{
+        'welcome-bg': serverStatus.includes('Welcome'),
+        'error-bg': serverStatus.includes('not responding') || serverStatus === 'Connection Error',
+      }"
     >
       <h4>Server Feedback</h4>
       <div class="alert-content">
-        <span class="alert-icon">{{ serverStatus.includes('Welcome') ? '🎉' : 'ℹ️' }}</span>
+        <span class="alert-icon">
+          {{ serverStatus.includes('Welcome') ? '🎉' : '⚠️' }}
+        </span>
         <p>{{ serverStatus }}</p>
       </div>
     </div>
@@ -77,7 +82,7 @@ async function sendLocationUpdate(lat, lon) {
       showBrowserNotification(response.data)
     }
   } catch (error) {
-    serverStatus.value = 'Connection Error'
+    serverStatus.value = error.response?.data || 'Connection Error'
     console.log(error)
   }
 }
@@ -138,57 +143,85 @@ onUnmounted(() => stopTracking())
 .dashboard-grid {
   display: grid;
   gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  width: 100%;
 }
+
+.alert-card {
+  grid-column: 1 / -1;
+  border-left: 5px solid #007bff;
+}
+
 .card {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
 }
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
+
 .card h4 {
   margin: 0;
   color: #333;
 }
+
 .indicator {
   width: 12px;
   height: 12px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
+
 .indicator-on {
   background: #28a745;
   box-shadow: 0 0 8px #28a745;
 }
+
 .indicator-off {
   background: #dc3545;
 }
+
 .status-msg {
   color: #666;
   font-size: 0.9rem;
   margin-bottom: 1.5rem;
 }
+
 .hint {
   font-size: 0.8rem;
   color: #999;
   margin-top: 0.5rem;
   margin-bottom: 1rem;
 }
+
 .input-row {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
 }
+
+@media (max-width: 480px) {
+  .input-row {
+    flex-direction: column;
+  }
+}
+
 .input-row input {
   flex: 1;
   padding: 0.6rem;
   border: 1px solid #ddd;
   border-radius: 6px;
+  font-size: 1rem;
 }
+
 .btn {
   border: none;
   padding: 0.8rem;
@@ -196,7 +229,9 @@ onUnmounted(() => stopTracking())
   font-weight: 600;
   cursor: pointer;
   width: 100%;
+  transition: background 0.2s;
 }
+
 .btn-success {
   background: #28a745;
   color: white;
@@ -209,19 +244,25 @@ onUnmounted(() => stopTracking())
   background: #6c757d;
   color: white;
 }
-.alert-card {
-  border-left: 5px solid #007bff;
-}
+
 .welcome-bg {
   background: #e7f3ff;
   border-left-color: #28a745;
 }
+
+.error-bg {
+  background: #fff5f5;
+  border-left-color: #dc3545;
+  color: #c53030;
+}
+
 .alert-content {
   display: flex;
   align-items: center;
   gap: 15px;
   margin-top: 0.5rem;
 }
+
 .alert-icon {
   font-size: 1.5rem;
 }
