@@ -131,16 +131,17 @@ function requestNotificationPermission() {
   }
 }
 
-function showBrowserNotification(message) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    try {
+async function showBrowserNotification(message) {
+  if (Notification.permission === 'granted') {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        body: message,
+      })
+    } else {
       new Notification('POI Detected', { body: message })
-    } catch (e) {
-      console.log(e)
-      console.warn('Standard notification failed, using alert fallback.')
     }
   }
-  alert(message)
 }
 
 onUnmounted(() => stopTracking())
