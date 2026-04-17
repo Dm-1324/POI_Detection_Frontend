@@ -67,6 +67,7 @@ import api from '../services/api'
 const props = defineProps(['user'])
 const isTracking = ref(false)
 const serverStatus = ref('')
+
 const manualCoords = reactive({ latitude: 28.5355, longitude: 77.391 })
 let trackingInterval = null
 
