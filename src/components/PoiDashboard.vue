@@ -132,9 +132,15 @@ function requestNotificationPermission() {
 }
 
 function showBrowserNotification(message) {
-  if (Notification.permission === 'granted') {
-    new Notification('POI Detected', { body: message })
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification('POI Detected', { body: message })
+    } catch (e) {
+      console.log(e)
+      console.warn('Standard notification failed, using alert fallback.')
+    }
   }
+  alert(message)
 }
 
 onUnmounted(() => stopTracking())
