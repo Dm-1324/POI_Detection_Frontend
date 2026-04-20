@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: 'https://poidetection-backend.onrender.com',
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 })
 

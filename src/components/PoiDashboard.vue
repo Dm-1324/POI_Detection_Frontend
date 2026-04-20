@@ -67,6 +67,7 @@ import api from '../services/api'
 const props = defineProps(['user'])
 const isTracking = ref(false)
 const serverStatus = ref('')
+
 const manualCoords = reactive({ latitude: 28.5355, longitude: 77.391 })
 let trackingInterval = null
 
@@ -130,9 +131,16 @@ function requestNotificationPermission() {
   }
 }
 
-function showBrowserNotification(message) {
+async function showBrowserNotification(message) {
   if (Notification.permission === 'granted') {
-    new Notification('POI Detected', { body: message })
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        body: message,
+      })
+    } else {
+      new Notification('POI Detected', { body: message })
+    }
   }
 }
 
